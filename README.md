@@ -7,7 +7,6 @@ State estimation toolbox for Python.
 - Nonlinear kalman filters (EKF, CKF, UKF)
 - Particle filter
 - RNN state estimator 
-- Separate test file for evaluating algorithms
 
 ## Future 
 
