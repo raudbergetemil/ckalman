@@ -40,7 +40,7 @@ def sigma_points(x, P, ftype):
     cholP = np.linalg.cholesky(P)
 
     if ftype == 'ckf':
-        sp = np.zeros(n, 2*n)
+        sp = np.zeros((n, 2*n))
         sqrtn = np.sqrt(n)
         for i in range(n):
             sp[:,i] = x + sqrtn*cholP[:,i]
@@ -58,7 +58,7 @@ def sigma_points(x, P, ftype):
 
 """
 Prediction step of CKF
-TODO: Implement!
+TODO: Make sure P stays pos def
 """
 def ckf_prediction(x, P, f, Q):
     n = x.shape[0] 
@@ -78,14 +78,16 @@ def ckf_prediction(x, P, f, Q):
 
 """
 Update step of CKF
-TODO: Implement!
+TODO: Make sure P stays pos def
 """
 def ckf_update(x, P, y, h, R):
-    n = x.shape[0] 
+    n = x.shape[0]
+    m = y.shape[0]
     w = 1/(2*n)
     sp = sigma_points(x, P, 'ckf')
     P_xy = np.zeros((n,n))
     S = np.zeros((n,n))
+    y_hat = np.zeros((m,))
 
     for i in range(2*n):
         y_hat += h(sp[:,i])*w

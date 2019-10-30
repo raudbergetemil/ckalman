@@ -25,10 +25,10 @@ def create_measurements(x,h):
         y[:,i] = h(x[:,i])
     return y
 
-def test_lin_kalman():
+def test(pred_fcn, update_fcn):
 
-    n = 1
-    m = 1
+    n = 2
+    m = 2
     Q = np.eye(n)
     R = np.eye(m)
     A = np.eye(n)
@@ -56,13 +56,16 @@ def test_lin_kalman():
     y = create_measurements(x,h)
     x_hat = np.zeros((n,N))
     P_hat = np.zeros((N,n,n))
+    P_hat[0,:,:] = Q
     for i in range(N-1):
-        x_hat[:,i], P_hat[i,:,:] = linear_kalman_update(x_hat[:,i], P_hat[i,:,:], y[:,i], H, R)
-        x_hat[:,i+1], P_hat[i+1,:,:] = linear_kalman_prediction(x_hat[:,i], P_hat[i,:,:], A, Q)
+        x_hat[:,i], P_hat[i,:,:] = update_fcn(x_hat[:,i], P_hat[i,:,:], y[:,i], h, R)
+        x_hat[:,i+1], P_hat[i+1,:,:] = pred_fcn(x_hat[:,i], P_hat[i,:,:], f, Q)
     fig, axis = plt.subplots()
     axis.plot(x_hat[0,:])
     axis.plot(x[0,:])
     plt.show()
 
+pred_fcn = ckf_prediction
+update_fcn = ckf_update
 
-test_lin_kalman()
+test(pred_fcn, update_fcn)
