@@ -57,8 +57,8 @@ def test_lin_kalman():
     x_hat = np.zeros((n,N))
     P_hat = np.zeros((N,n,n))
     for i in range(N-1):
-        x_hat[:,i], P_hat[i,:,:] = kalman_update(x_hat[:,i], P_hat[i,:,:], y[:,i], H, R)
-        x_hat[:,i+1], P_hat[i+1,:,:] = kalman_prediction(x_hat[:,i], P_hat[i,:,:], A, Q)
+        x_hat[:,i], P_hat[i,:,:] = linear_kalman_update(x_hat[:,i], P_hat[i,:,:], y[:,i], H, R)
+        x_hat[:,i+1], P_hat[i+1,:,:] = linear_kalman_prediction(x_hat[:,i], P_hat[i,:,:], A, Q)
     fig, axis = plt.subplots()
     axis.plot(x_hat[0,:])
     axis.plot(x[0,:])
