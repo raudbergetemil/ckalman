@@ -1,16 +1,19 @@
 #include <stdio.h>
 #include <matrix.h>
+#include <matrix2.h>
 
 #define n 2
 #define m 2
 #define o 2
 
 void kalman_prediction();
+void kalman_update();
+MAT* matrix_invert();
 
 int main(void **argv){
 
-    MAT *A, *Q, *R, *P, *P_new;
-    VEC *x, *x_new; 
+    MAT *A, *Q, *R, *P, *H;
+    VEC *x, *y; 
 
     A = m_get(n,n);
     m_ident(A);
@@ -18,34 +21,65 @@ int main(void **argv){
 
     Q = m_get(n,n);
     m_ident(Q);
+    R = m_get(o,o);
+    m_ident(R);
     P = m_get(n,n);
     m_ident(P);
-    P_new = m_get(n,n);
+    H = m_get(o,n);
+    m_ident(H);
 
     x = v_get(n);
     v_ones(x);
-    x_new = v_get(n);
+    y = v_get(o);
     
     //v_output(mv_mlt(A,x, VNULL));
-    kalman_prediction(x, P, x_new, P_new, A, Q);
-    v_output(x);
-    v_output(x_new);
     m_output(P);
-    m_output(P_new);
+    kalman_prediction(x, P, A, Q);
+    m_output(P);
+    kalman_update(x, P, y, H, R);
+    m_output(P);
 }
 
-void kalman_prediction(VEC *x, MAT *P, VEC *x_new, MAT *P_new, MAT *A, MAT *Q){
+/**
+ * Computes the linear Kalman filter prediction step.
+ * 
+ * 
+ * @param VEC *x the prior state density mean.
+ * @param MAT *P the prior state density covariance.
+ * @param MAT *A the linear process model.
+ * @param MAT *Q the process noise covariance
+ * 
+ * @return Changes x, P into the predicted density  
+ */
+void kalman_prediction(VEC *x, MAT *P, const MAT *A, const MAT *Q){
     // Xkp1 = Ax
     // Pkp1 = APA + Q
-    MAT *P_tmp;
-    P_tmp = m_get(n, n);
-
-    mv_mlt(A, x, x_new);
-
-    m_mlt(A, P, P_tmp);
-    m_mlt(P_tmp, A, P_new);
-    m_add(P_new, Q, P_new);
-
-    m_free(P_tmp);
+    v_copy(mv_mlt(A, x, VNULL), x);
+    m_add(m_mlt(m_mlt(A, P, MNULL), A, P), Q, P);
 }
 
+/**
+ * Computes the linear Kalman filter update step.
+ * 
+ * 
+ * @param VEC *x the prior state density mean.
+ * @param MAT *P the prior state density covariance.
+ * @param MAT *H the linear measurement model.
+ * @param MAT *R the measurement noise covariance
+ * 
+ * @return Changes x, P into the predicted density  
+ */
+void kalman_update(VEC *x, MAT *P, VEC *y, const MAT *H, const MAT *R){
+    // S = HPH' + R
+    // K = PH'inv(s)
+    // P = P - KHP
+    // x = x + K(y - Hx)
+    MAT *S, *K, *m_tmp;
+
+    S = m_add(mmtr_mlt(m_mlt(H, P, MNULL), H, MNULL), R, MNULL);
+
+    K = m_inverse(S, MNULL);
+    m_sub(P, m_mlt(m_mlt(K, H, MNULL), P, MNULL), P);
+    v_add(x, mv_mlt(K, v_sub(y, mv_mlt(H, x, VNULL), VNULL), VNULL), x);
+
+}
