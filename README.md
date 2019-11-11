@@ -1,6 +1,10 @@
 # ckalman
 
-State estimation toolbox for Python. 
+State estimation toolbox.
+
+## Dependencies 
+
+- [Meschach](https://github.com/yageek/Meschach)
 
 ## Todo
 - Handle control input to linear Kalman filter
