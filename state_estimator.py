@@ -2,12 +2,12 @@
 
 import numpy as np
 
-def linear_kalman_prediction(x, P, A, Q):
+def linear_kalman_prediction(x, P, A, B, u, Q):
     """
     Prediction step of linear Kalman filter
     """
 
-    return (A@x, A@P@A.T + Q)
+    return (A@x + B@u, A@P@A.T + Q)
 
 def linear_kalman_update(x, P, y, H, R):
     """
@@ -40,17 +40,16 @@ def sigma_points(x, P, ftype):
     """
     n = x.shape[0]
     cholP = np.linalg.cholesky(P)
+    sqrtn = np.sqrt(n)
 
     if ftype == 'ckf':
         sp = np.zeros((n, 2*n))
-        sqrtn = np.sqrt(n)
         for i in range(n):
             sp[:,i] = x + sqrtn*cholP[:,i]
             sp[:,i+n] = x - sqrtn*cholP[:,i]
             
     elif ftype == 'ukf':
         sp = np.zeros(n, 2*n + 1)
-        sqrtn = np.sqrt(n)
         sp[:,i] = x
 
         for i in range(1, n):
@@ -58,7 +57,7 @@ def sigma_points(x, P, ftype):
             sp[:,i+n] = x - sqrtn*cholP[:,i]
     return sp
 
-def ckf_prediction(x, P, f, Q):
+def ckf_prediction(x, P, f, u, Q):
     """
     Prediction step of CKF
     TODO: Make sure P stays pos def
@@ -71,12 +70,20 @@ def ckf_prediction(x, P, f, Q):
     P_new = np.zeros((n,n))
 
     for i in range(2*n):
-        x_new += f(sp[:,i])*w
+        x_new += f(sp[:,i], u)*w
 
     for i in range(2*n):
-        P_new += f(sp[:,i]-x_new)*(f(sp[:,i])-x_new).T*w
+        P_new += f(sp[:,i]-x_new, u)*(f(sp[:,i], u)-x_new).T*w
     P_new += Q
 
+    # Make sure P is pos def
+    if min(np.linalg.eigvalsh(P_new)) <= 0:
+        e, v = np.linalg.eigh(P_new)
+        e[e < 0] = 1e-1
+        P_new = v@np.diag(e)@np.linalg.inv(v)
+    
+    if min(np.linalg.eigvalsh(P_new)) <= 0:
+        print('')
     return x_new, P_new
 
 def ckf_update(x, P, y, h, R):
@@ -102,7 +109,14 @@ def ckf_update(x, P, y, h, R):
     S += R
     
     K = P_xy.T@np.linalg.inv(S)
-    return (x + K@(y-y_hat), P - K@S@K.T)
+
+    P_new = P - K@S@K.T
+    # Make sure P is pos def
+    if min(np.linalg.eigvalsh(P_new)) <= 0:
+        e, v = np.linalg.eigh(P_new)
+        e[e < 0] = 1e-1
+        P_new = v@np.diag(e)@np.linalg.inv(v)
+    return (x + K@(y-y_hat), P_new)
 
 def ukf_prediction():
     """

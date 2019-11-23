@@ -56,9 +56,14 @@ def test(pred_fcn, update_fcn):
 
         return H@x + np.random.multivariate_normal(np.zeros((m,)),R)
 
+    def f(x,u):
 
-    x,u = create_trajectory(n,N,Q,real_f, m)
-    y = create_measurements(x,real_h)
+        return A@x + B@u
+    def h(x):
+        return H@x 
+
+    x = np.zeros((n,N))
+    y = np.zeros((o,N))
     x_hat = np.zeros((n,N))
     P_hat = np.zeros((N,n,n))
     P_hat[0,:,:] = Q
@@ -77,21 +82,22 @@ def test(pred_fcn, update_fcn):
         y[:,i+1] = sim.step(u[:,i])
 
         # Predict from current estimate
-        x_hat[:,i+1], P_hat[i+1,:,:] = pred_fcn(x_hat[:,i], P_hat[i,:,:], A,B, u[:,i], Q)
-
+        x_hat[:,i+1], P_hat[i+1,:,:] = pred_fcn(x_hat[:,i], P_hat[i,:,:], f, u[:,i], Q)
+       
         # Update estimate 
-        x_hat[:,i+1], P_hat[i+1,:,:] = update_fcn(x_hat[:,i+1], P_hat[i+1,:,:], y[:,i+1], H, R)
-
+        x_hat[:,i+1], P_hat[i+1,:,:] = update_fcn(x_hat[:,i+1], P_hat[i+1,:,:], y[:,i+1], h, R)
+        
         # Save real current state
         x[:,i+1] = sim.get_current_state()
 
     fig, axis = plt.subplots()
     axis.plot(x_hat[0,:])
     axis.plot(x[0,:])
+    axis.legend(['Estimate', 'Real'])
     plt.show()
 
-pred_fcn = linear_kalman_prediction
-update_fcn = linear_kalman_update
+pred_fcn = ckf_prediction
+update_fcn = ckf_update
 
 test(pred_fcn, update_fcn)
 #data = scipy.io.loadmat('test.mat')
