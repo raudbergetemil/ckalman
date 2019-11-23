@@ -79,7 +79,7 @@ def ckf_prediction(x, P, f, u, Q):
     # Make sure P is pos def
     if min(np.linalg.eigvalsh(P_new)) <= 0:
         e, v = np.linalg.eigh(P_new)
-        e[e < 0] = 1e-1
+        e[e < 0] = 1e-4
         P_new = v@np.diag(e)@np.linalg.inv(v)
     
     if min(np.linalg.eigvalsh(P_new)) <= 0:
@@ -108,13 +108,13 @@ def ckf_update(x, P, y, h, R):
         S += ((h(sp[:,i])-y_hat)*h(sp[:,i])-y_hat).T*w
     S += R
     
-    K = P_xy.T@np.linalg.inv(S)
+    K = P_xy@np.linalg.inv(S)
 
     P_new = P - K@S@K.T
     # Make sure P is pos def
     if min(np.linalg.eigvalsh(P_new)) <= 0:
         e, v = np.linalg.eigh(P_new)
-        e[e < 0] = 1e-1
+        e[e < 0] = 1e-4
         P_new = v@np.diag(e)@np.linalg.inv(v)
     return (x + K@(y-y_hat), P_new)
 

@@ -35,7 +35,7 @@ def test(pred_fcn, update_fcn):
     o = 2
     Q = np.eye(n)
     R = np.eye(m)
-    A = 0.9*np.eye(n)
+    A = 0.5*np.eye(n)
     B = np.eye(n)
     H = np.eye(o)
     N = 100
@@ -75,8 +75,11 @@ def test(pred_fcn, update_fcn):
     K = lqr_gain(A,B,Q,R)
 
     for i in range(N-1):
+        # Save real current state
+        x[:,i] = sim.get_current_state()
+
         # Calculate control signal 
-        u[:,i] = -K@x_hat[:,i]
+        # u[:,i] = -K@x_hat[:,i]
         
         # Take step in simulator environment and observe output
         y[:,i+1] = sim.step(u[:,i])
@@ -87,13 +90,12 @@ def test(pred_fcn, update_fcn):
         # Update estimate 
         x_hat[:,i+1], P_hat[i+1,:,:] = update_fcn(x_hat[:,i+1], P_hat[i+1,:,:], y[:,i+1], h, R)
         
-        # Save real current state
-        x[:,i+1] = sim.get_current_state()
 
     fig, axis = plt.subplots()
     axis.plot(x_hat[0,:])
     axis.plot(x[0,:])
-    axis.legend(['Estimate', 'Real'])
+    axis.plot(y[0,:])
+    axis.legend(['Estimate 1', 'Real 1', 'Measurement'])
     plt.show()
 
 pred_fcn = ckf_prediction
