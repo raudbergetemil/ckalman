@@ -1,11 +1,12 @@
 # ckalman
 
-State estimation toolbox. 
+Implementation of various control-related algorithms, such as the Kalman filter, LQR, Extended and Cubature Kalman filter in Python and (in the future) C.
 
 ## Dependencies 
 
 ### Python
 - Numpy
+- Scipy
 
 ### C
 - [Meschach](https://github.com/yageek/Meschach)
@@ -14,10 +15,11 @@ State estimation toolbox.
 - C implementations 
 - Particle filter
 - RNN state estimator 
+- Feedback linerization for 
 
 ## Future 
 
-- Control algorithms such as LQR, MPC
+- Control algorithms such as MPC
 
 ## Compilation
 
