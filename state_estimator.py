@@ -105,7 +105,7 @@ def ckf_update(x, P, y, h, R):
 
     for i in range(2*n):
         P_xy += (sp[:,i]-x)*(h(sp[:,i])-y_hat).T*w
-        S += ((h(sp[:,i])-y_hat)*h(sp[:,i])-y_hat).T*w
+        S += (h(sp[:,i])-y_hat)*(h(sp[:,i])-y_hat).T*w
     S += R
     
     K = P_xy@np.linalg.inv(S)
