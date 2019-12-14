@@ -34,11 +34,11 @@ def test(pred_fcn, update_fcn):
     m = 2
     o = 2
     Q = np.eye(n)
-    R = np.eye(m)
+    R = 0.0001*np.eye(m)
     A = 0.5*np.eye(n)
     B = np.eye(n)
     H = np.eye(o)
-    N = 100
+    N = 1000
     """ 
     Process model x_{k+1} = f(x_{k})
     """
@@ -58,32 +58,79 @@ def test(pred_fcn, update_fcn):
 
     def f(x,u):
 
-        return A@x + B@u
+        # return A@x + B@u
+        #alpha = 0.5
+        #beta = 0.2
+        #delta = 0.6
+        #gamma = 0.3
+        #x1 = x[0] + 0.1*(alpha*x[0] - beta*x[0]*x[1] + u[0])
+        #x2 = x[1] + 0.1*(delta*x[0]*x[1] - gamma*x[1] + u[1])
+        #return np.array([x1,x2])
+
+        # Discretized volterra lotka with mu = 1
+        Ts = 0.1
+        mu = 1
+        x1_dot = mu*(x[0] - 1/3*x[0]**3 - x[1]) + u[0]
+        x2_dot = 1/mu*x[0] 
+        dxdt = np.array([x1_dot, x2_dot])
+
+        return x + Ts*dxdt
+
+
     def h(x):
         return H@x 
+    
+    def fl_u(x):
+        """
+        Calculates the feedback linearizing control signal given state x
+        """
+        # a = 0.01
+        # u1 =  - x[0]*(0.2*(1-x[0])-0.43*x[1])
+        # u2 =  - 3*x[0]*x[1]
+        # return np.array([u1,u2])
+
+        # For predator-prey model in 'simulator.py'
+        # alpha = 0.5
+        # beta = 0.2
+        # delta = 0.6
+        # u1 = -x[0]*(1+alpha) +  beta*x[0]*x[1]
+        # u2 = -delta*x[0]*x[1] 
+        # return np.array([u1,u2])
+
+        # For Van der pol oscillator
+        Ts = 0.1
+        mu = 1
+        x1_dot = mu*(x[0] - 1/3*x[0]**3 - x[1]) 
+        x2_dot = 1/mu*x[0] 
+
+        u1 = -(x[0] + Ts*x1_dot) - 0.1*x[0]
+        u2 = 0
+        return np.array([u1,u2])
 
     x = np.zeros((n,N))
     y = np.zeros((o,N))
     x_hat = np.zeros((n,N))
     P_hat = np.zeros((N,n,n))
-    P_hat[0,:,:] = Q
+    P_hat[0,:,:] = 10*Q
 
     sim = Simulator(n,m,o)
     u = np.zeros((m,N))
 
     # Calculate LQR gain
     K = lqr_gain(A,B,Q,R)
+    fig, axis = plt.subplots()
 
     for i in range(N-1):
         # Save real current state
         x[:,i] = sim.get_current_state()
 
         # Calculate control signal 
-        # u[:,i] = -K@x_hat[:,i]
+        u[:,i] = fl_u(x_hat[:,i])
         
         # Take step in simulator environment and observe output
         y[:,i+1] = sim.step(u[:,i])
 
+        # x_hat[:,i+1] = y[:,i+1]
         # Predict from current estimate
         x_hat[:,i+1], P_hat[i+1,:,:] = pred_fcn(x_hat[:,i], P_hat[i,:,:], f, u[:,i], Q)
        
@@ -91,10 +138,10 @@ def test(pred_fcn, update_fcn):
         x_hat[:,i+1], P_hat[i+1,:,:] = update_fcn(x_hat[:,i+1], P_hat[i+1,:,:], y[:,i+1], h, R)
         
 
-    fig, axis = plt.subplots()
     axis.plot(x_hat[0,:])
     axis.plot(x[0,:])
-    axis.plot(y[0,:])
+    #axis.plot(y[0,:], 'b.', markersize=0.5)
+    axis.plot(u[0,:])
     axis.legend(['Estimate 1', 'Real 1', 'Measurement'])
     plt.show()
 
