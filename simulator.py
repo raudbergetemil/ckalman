@@ -18,13 +18,18 @@ class Simulator:
         Returns the next state based on the Explicit Runge Kutta 4 method. 
         Assumes that control signal is piecewise constant. Does not handle explicit 
         time dependency.
+
+        Inputs: 
+        x - current state
+        u - current control signal
+        f - continuous process model
         """
 
         # Calculate coefficients
         k1 = self.Ts*f(x,u)
         k2 = self.Ts*f(x + k1/2,u)
         k3 = self.Ts*f(x + k2/2, u)
-        k4 = self.Ts*f(x + k3)
+        k4 = self.Ts*f(x + k3, u)
 
         # Calculate and return value at next timestep
         return x + 1/6*(k1+k2+k3+k4)
@@ -47,13 +52,19 @@ class Simulator:
 
         # Nonlinear model
         # Euler forward discretized Volterra lotka
-        alpha = 0.5
-        beta = 0.2
-        delta = 0.6
-        gamma = 0.3
-        x1 = x[0] + self.Ts*(alpha*x[0] - beta*x[0]*x[1] + u[0])
-        x2 = x[1] + self.Ts*(delta*x[0]*x[1] - gamma*x[1] + u[1])
-        return np.array([x1,x2])
+        # alpha = 0.5
+        # beta = 0.2
+        # delta = 0.6
+        # gamma = 0.3
+        # x1 = x[0] + self.Ts*(alpha*x[0] - beta*x[0]*x[1] + u[0])
+        # x2 = x[1] + self.Ts*(delta*x[0]*x[1] - gamma*x[1] + u[1])
+        # return np.array([x1,x2])
+
+        # Van der pol oscillator
+        mu = 1
+        x1_dot = mu*(x[0] - 1/3*x[0]**3 - x[1]) + u[0]
+        x2_dot = 1/mu*x[0] 
+        return np.array([x1_dot,x2_dot])
 
     def measurement_model(self, x):
         """
@@ -75,7 +86,7 @@ class Simulator:
         TODO: 
         - Implement rewards to train RL algorithms
         """
-        self.x = self.process_model(self.x, u)
+        self.x = self.RK4_next_step(self.x, u, self.process_model)
         return self.measurement_model(self.x)
     
     def get_current_state(self):
