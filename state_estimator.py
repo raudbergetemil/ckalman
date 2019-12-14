@@ -18,12 +18,12 @@ def linear_kalman_update(x, P, y, H, R):
     K = P@H.T@np.linalg.inv(S)
     return (x + K@(y-H@x), P - K@H@P)
 
-def ekf_prediction(x, P, f, dfdx, Q):
+def ekf_prediction(x, P, f, dfdx, u, Q):
     """
     Prediction step of EKF
     """
 
-    return (f(x), dfdx@P@dfdx.T + Q)
+    return (f(x,u), dfdx@P@dfdx.T + Q)
 
 def ekf_update(x, P, y, h, dhdx, R):
     """
@@ -60,7 +60,6 @@ def sigma_points(x, P, ftype):
 def ckf_prediction(x, P, f, u, Q):
     """
     Prediction step of CKF
-    TODO: Make sure P stays pos def
     """
 
     n = x.shape[0] 
@@ -89,15 +88,14 @@ def ckf_prediction(x, P, f, u, Q):
 def ckf_update(x, P, y, h, R):
     """
     Update step of CKF
-    TODO: Make sure P stays pos def
     """
 
     n = x.shape[0]
     m = y.shape[0]
     w = 1/(2*n)
     sp = sigma_points(x, P, 'ckf')
-    P_xy = np.zeros((n,n))
-    S = np.zeros((n,n))
+    P_xy = np.zeros((n,m))
+    S = np.zeros((m,m))
     y_hat = np.zeros((m,))
 
     for i in range(2*n):
